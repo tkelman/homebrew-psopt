@@ -61,9 +61,27 @@ index eb680bb..ae96073 100644
    fclose( iofile );
    if(!eof) {
 diff --git a/lusolmain.c b/lusolmain.c
-index 224eaa0..4c1f10d 100644
+index 4c1f10d..2211109 100644
 --- a/lusolmain.c
 +++ b/lusolmain.c
+@@ -27,7 +27,7 @@ MYBOOL isNum(char val)
+   return( (MYBOOL) ((ord >= 0) && (ord <= 9)) );
+ }
+ 
+-void main( int argc, char *argv[], char *envp[] )
++int main( int argc, char *argv[], char *envp[] )
+ {
+ /* Output device */
+   FILE *outunit = stdout;
+@@ -71,7 +71,7 @@ int main( int argc, char *argv[], char *envp[] )
+     printf("Formats: Conventional RCV .TXT, MatrixMarket .MTX, or Harwell-Boeing .RUA\n");
+     printf("Author:  Michael A. Saunders (original Fortran version)\n");
+     printf("         Kjell Eikland       (modified C version)\n");
+-    return;
++    return 0;
+   }
+ 
+ /* Create the LUSOL object and set user options */
 @@ -157,7 +157,6 @@ void main( int argc, char *argv[], char *envp[] )
  
  /* Obtain file extension and see if we must estimate matrix data size */
@@ -80,3 +98,11 @@ index 224eaa0..4c1f10d 100644
  
      /* Read conventional text file format */
      if(strcmp(fileext, ".TXT") == 0) {
+@@ -463,6 +463,7 @@ x900:
+ #endif
+ 
+   LUSOL_free(LUSOL);
++  return success ? 0 : 1;
+ 
+ /*     End of main program for Test of LUSOL */
+ }
