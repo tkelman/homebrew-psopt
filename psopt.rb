@@ -4,26 +4,18 @@ class Psopt302Patch < Formula
   homepage 'https://code.google.com/p/psopt/'
   url 'http://psopt.googlecode.com/files/patch_3.02.zip'
   sha1 'fd04038126dcfe4e1e9d95a26c7795423ac73276'
+
+  def patches
+    # include assert, resolve ambiguous reference to rank, and fix dimension
+    # errors in copy_decision_variables and lagrange_interpolation in psopt.cxx
+    { :p3 => DATA }
+  end
 end
 
 class Psopt < Formula
   homepage 'https://code.google.com/p/psopt/'
   url 'http://psopt.googlecode.com/files/Psopt3.tgz'
   sha1 '3cdcb7eb82bb3862376488026bd47413ec31161c'
-
-  #fails_with :clang do
-  #  build 500
-  #  cause <<-EOS.undent
-  #    The colon() DMatrix operator gives runtime "Dimension error in
-  #    elemDivision()" and elemProduct() functions when compiled with clang.
-  #    EOS
-  #end
-
-  def patches
-    # include assert and resolve ambiguous reference to rank in psopt.cxx,
-    # remove extern "C" around standard includes in dmatrixv.cxx
-    DATA
-  end
 
   depends_on 'gnuplot' => :optional
   depends_on 'openblas' => :optional
@@ -35,11 +27,8 @@ class Psopt < Formula
   def install
     # Download and apply Psopt 3.02 patch
     Psopt302Patch.new.brew do
-      (buildpath).install 'psopt.cxx'
+      (buildpath/'PSOPT/src').install 'psopt.cxx'
     end
-    # Recreate original copy of psopt.cxx for merging patches
-    system 'patch -t -o psopt.orig.cxx -d PSOPT -p2 -i ../000-homebrew.diff || true'
-    system 'diff -u PSOPT/psopt.orig.cxx psopt.cxx | patch -d PSOPT/src'
 
     # Don't need to build CXSparse or LUSOL here
     inreplace 'Makefile',
@@ -82,6 +71,12 @@ class Psopt < Formula
       s.remove_make_var! 'CXX'
     end
 
+    inreplace 'dmatrix/src/dmatrixv.cxx' do |s|
+      # Remove extern "C" around standard includes in dmatrixv.cxx
+      s.sub! 'extern "C" {', ''
+      s.sub! '}', ''
+    end
+
     system 'make', 'all'
 
     lib.install 'dmatrix/lib/libdmatrix.a'
@@ -107,6 +102,23 @@ index 18dc314..c9fd80d 100644
  
  
  
+@@ -2653,6 +2653,7 @@ void copy_decision_variables(Sol& solution, DMatrix& x, Prob& problem, Alg& algo
+ 		(solution.nodes[i])(1,k)          =  convert_to_original_time( (aux_local_pr->snodes[i])(k), t0, tf );
+ 	}
+ 
++        if (nparam > 0)
+         solution.parameters[i] = elemDivision( x(colon(iphase_offset+offset2+1, iphase_offset+offset2+nparam)), param_scaling);
+ 
+         iphase_offset += nvars_phase_i;
+@@ -4457,7 +4458,7 @@ void lagrange_interpolation(DMatrix& y, DMatrix& x, DMatrix& pointx, DMatrix& po
+    for (i=1;i<=n;i++) {
+       for (j=1;j<=n;j++) {
+            if (i != j) {
+-                L(i,colon()) = ( L(i,colon())&(  x-pointx(j)*ones(1,length(x)) )  )/(pointx(i)-pointx(j));
++                L(i,colon()) = elemProduct( L(i,colon()),(  x-pointx(j)*ones(1,length(x)) )  )/(pointx(i)-pointx(j));
+            }
+       }
+    }
 @@ -9883,7 +9884,7 @@ void print_solution_summary(Prob& problem, Alg& algorithm, Sol& solution)
          }
        }
@@ -116,23 +128,3 @@ index 18dc314..c9fd80d 100644
  
        fprintf(outfile,"\n\n>>> 95 percent statistical confidence limits on estimated parameters ");
        fprintf(outfile,"\nPhase\tParameter\t(Low Confidence Limit) \t(Value) \t\t(High Confidence Limit)");
-diff --git a/dmatrix/src/dmatrixv.cxx b/dmatrix/src/dmatrixv.cxx
-index cc7e169..3579221 100755
---- a/dmatrix/src/dmatrixv.cxx
-+++ b/dmatrix/src/dmatrixv.cxx
-@@ -30,7 +30,6 @@ Author:    Dr. Victor M. Becerra
- #ifdef UNIX
- 
- 
--extern "C" {
- 
- 
- #include <stdio.h>
-@@ -39,7 +38,6 @@ extern "C" {
- #include <time.h>
- #include <cstdio>
- 
--}
- 
- #else
- 
