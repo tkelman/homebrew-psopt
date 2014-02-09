@@ -6,7 +6,7 @@ class Lusol < Formula
   sha1 '9e12a0c774479a66146cf1de6936732d21c77087'
 
   def patches
-    # fixes undefined symbols for max and _strupr
+    # fixes undefined symbols for max and _strupr, and outputs a return code from lusolmain.c
     DATA
   end
 
