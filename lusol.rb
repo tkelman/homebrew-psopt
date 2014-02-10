@@ -1,4 +1,4 @@
-require "formula"
+require 'formula'
 
 class Lusol < Formula
   homepage 'http://www.stanford.edu/group/SOL/software/lusol.html'
